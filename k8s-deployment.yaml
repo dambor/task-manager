@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: task-manager
-        image: task-manager:1.0.0
+        image: glenioborges/task-manager:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
@@ -54,21 +54,34 @@ spec:
     targetPort: 3000
   type: LoadBalancer
 ---
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
+apiVersion: v1
+kind: Service
 metadata:
-  name: task-manager-hpa
+  name: task-manager-service
+  labels:
+    app: task-manager
+  annotations:
+    service.beta.kubernetes.io/description: "Task Manager Frontend Service"
 spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: task-manager
-  minReplicas: 3
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
+  selector:
+    app: task-manager
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    nodePort: 30080
+    protocol: TCP
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+  
+  # Options below are commented out for reference
+  
+  # For ClusterIP (internal only)
+  # type: ClusterIP
+  
+  # For LoadBalancer (cloud environments)
+  # type: LoadBalancer
+  # loadBalancerIP: 10.0.0.1
+  # loadBalancerSourceRanges:
+  # - 192.168.0.0/24
